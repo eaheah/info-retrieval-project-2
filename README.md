@@ -6,3 +6,6 @@
 - `source /path/to/venv/bin/activate`
 - `pip3 install --upgrade pip`
 - `pip3 install -r requirements.txt`
+
+## Running elasticsearch locally
+- [Elastic Reference](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html)
