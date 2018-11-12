@@ -1,0 +1,4 @@
+beautifulsoup4==4.6.3
+jupyter==1.0.0
+requests==2.19.1
+matplotlib==3.0.0
