@@ -12,6 +12,7 @@ from IPython.display import display, HTML
 import time
 from multiprocessing.pool import ThreadPool
 import threading
+import pickle
 
 class CSVInputError(Exception):
     pass
@@ -135,11 +136,11 @@ class WebCrawler:
         crawl_delay = self.check_for_robot(url)
         parsed_url = urlparse(url)
         add_to_repo = self.check_domain(parsed_url.netloc)
-        print(add_to_repo)
+        # print(add_to_repo)
         if add_to_repo:
             time.sleep(crawl_delay)
             added = self.add_file_to_repo(url)
-            print(added)
+            # print(added)
             if added:
                 self.find_links(url)
         e = time.time() - st
@@ -302,17 +303,20 @@ class WebCrawler:
         '''
         st = time.time()
         if url not in self.repo_files and self.check_ext(url):
-            r = requests.get(url)
-            # print(dir(r))
-            # print(r.headers)
-            # print(r.apparent_encoding)
-            # print()
-            if 'Content-Type' in r.headers and'text/html' in r.headers['Content-Type']:
-                self.file_count += 1
-                self.repo_files[url] = {'filename': f'{self.file_count}.html', 'status': r.status_code}
-                with open(os.path.join(self.repo, self.repo_files[url]['filename']), 'wb') as f:
-                    f.write(r.content)
-                return True
+            try:
+                r = requests.get(url)
+                # print(dir(r))
+                # print(r.headers)
+                # print(r.apparent_encoding)
+                # print()
+                if 'Content-Type' in r.headers and'text/html' in r.headers['Content-Type']:
+                    self.file_count += 1
+                    self.repo_files[url] = {'filename': f'{self.file_count}.html', 'status': r.status_code}
+                    with open(os.path.join(self.repo, self.repo_files[url]['filename']), 'wb') as f:
+                        f.write(r.content)
+                    return True
+            except:
+                pass
         e = time.time() - st
         # print(f'add_file_to_repo took {e}')
         return False
@@ -323,7 +327,7 @@ class WebCrawler:
         Saves links to main_link_queue and images to url's repo_files entry
         '''
         st = time.time()
-        with open(os.path.join(self.repo, self.repo_files[url]['filename']), 'r', encoding='utf-8') as f:
+        with open(os.path.join(self.repo, self.repo_files[url]['filename']), 'rb') as f:
             soup = BeautifulSoup(f, 'html.parser')
             links = soup.find_all('a')
             self.repo_files[url]['links'] = 0
@@ -339,7 +343,6 @@ class WebCrawler:
                     self.main_link_queue.add(link_url)
                 except KeyError as e: # <a> tag without href
                     pass
-
             images = soup.find_all('img')
             self.repo_files[url]['images'] = len(images)
         e = time.time() - st
@@ -399,6 +402,9 @@ class WebCrawler:
         html += '</table></body></html>'
         with open('report.html', 'w') as f:
             f.write(html)
+
+        with open('repo_files.pkl', 'wb') as f:
+            pickle.dump(self.repo_files, f)
 
 
 
