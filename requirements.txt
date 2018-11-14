@@ -4,3 +4,5 @@ requests==2.19.1
 matplotlib==3.0.0
 elasticsearch>=6.0.0,<7.0.0
 lorem==0.1.1
+html2text==2018.1.9
+newspaper3k==0.2.8

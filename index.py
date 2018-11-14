@@ -110,6 +110,6 @@ class Index:
 
 
 if __name__ == '__main__':
-    i = Index(page_size=4, recreate=True)
+    i = Index(page_size=4, recreate=False)
     i.index()
 
