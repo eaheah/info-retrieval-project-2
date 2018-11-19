@@ -1,4 +1,5 @@
 from elastic_indexer import Indexer
+from content_processor2 import ContentProcessor
 import pickle
 import os
 import math
@@ -36,7 +37,7 @@ class Paginator:
         return self.pages[index]
 
 class Index:
-    def __init__(self, html_folder='html_processed', text_folder='processed', repo_files='repo_files.pkl', index='test', doc_type='test', page_size=50, recreate=False):
+    def __init__(self, html_folder='repository', text_folder='processed', repo_files='repo_files.pkl', index='test', doc_type='test', page_size=50, recreate=False):
         with open(repo_files, 'rb') as f:
             self.repo_files = pickle.load(f)
 
@@ -72,6 +73,9 @@ class Index:
                 'site_html': html,
                 'id': _id
             }
+            cp = ContentProcessor(html)
+            doc.update(**cp.extract_fields())
+            print(doc.keys())
             data.append(doc)
 
         self.indexer.bulk_index_data(data, self.page_size)

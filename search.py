@@ -10,18 +10,56 @@ class Search:
 		self.query = self._make_query(text)
 
 	def _make_query(self, text):
+		# ['filename', 'url', 'site_text', 'site_html', 'id', 'title', 'description', 'keywords', 'text']
 		return {
 			"highlight": {
 				"fields": {
 					"site_text": {}
 				}
 			},
-			"query": {
-				"match_phrase": {
-					"site_text": text
+
+				"query": {
+					"bool": {
+						"should": [
+							{
+								"match_phrase": {
+									"site_text": {
+										"query": text
+									}
+								}
+							},
+							{
+								"match_phrase": {
+									"title": {
+										"query": text,
+										"boost": 4
+									}
+								}
+							},
+							{
+								"match_phrase": {
+									"description": {
+										"query": text,
+										"boost": 3
+									}
+
+								}
+							},
+							{
+								"match_phrase": {
+									"keywords": {
+										"query": text,
+										"boost": 2
+									}
+
+								}
+							}
+						]
+					}
 				}
 			}
-		}
+
+
 
 	def _match_all(self):
 		return {
