@@ -9,3 +9,7 @@
 
 ## Running elasticsearch locally
 - [Elastic Reference](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html)
+
+## Running the flask server
+- `export FLASK_APP=app.py`
+- `flask run`
