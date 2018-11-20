@@ -103,6 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+#node modules
+./client/node_modules
+
 html_processed/
 repository/
 processed/
