@@ -48,7 +48,11 @@ export default {
         console.log(temp.length)
         if (temp.length >= 1){
           //Replace with first hit URL (temp[0.url~])
-          window.location.href = "http://nba.com"
+          window.open('http://nba.com', '_blank')
+          //window.location.href = "http://nba.com"
+        }
+        else {
+          alert("0 Result Found. Unable to redirect to a new URL")
         }
       })
     }
