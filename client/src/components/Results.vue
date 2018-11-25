@@ -9,7 +9,7 @@
             </font>
             </div>
             <div>
-              <a href="result.url" class="url">
+              <a v-bind:href="result.url" class="url" target=blank>
                 {{result.url}}
               </a>
             </div>
@@ -56,7 +56,7 @@ export default {
           }
           dict.push({
             title:  "(No Title Yet) Document " + (i+1),
-            url:  "No URL Yet",
+            url:  "http://nba.com",
             snippet:  snippet
           })
         }
@@ -88,7 +88,7 @@ export default {
       }
       dict.push({
         title:  "(No Title Yet) Document " + (i+1),
-        url:  "No URL Yet",
+        url:  "http://nba.com",
         snippet:  snippet
       })
     }
