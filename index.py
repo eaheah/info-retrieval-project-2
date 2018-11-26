@@ -3,7 +3,7 @@ from content_processor2 import ContentProcessor
 import pickle
 import os
 import math
-
+import time
 from multiprocessing.pool import ThreadPool as Pool
 
 
@@ -103,7 +103,7 @@ class Index:
         pool.map(self._worker, [self.paginator.page(pn).get_file_list() for pn in self.paginator.page_range])
         pool.close()
         pool.join()
-
+        time.sleep(1)
         self.print_totals()
 
 

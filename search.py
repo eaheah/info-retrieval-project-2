@@ -14,10 +14,11 @@ class Search:
 		return {
 			"highlight": {
 				"fields": {
-					"site_text": {}
+					'title': {},
+					'description': {},
+					"site_text": {},
 				}
 			},
-
 				"query": {
 					"bool": {
 						"should": [
@@ -71,7 +72,7 @@ class Search:
 		}
 
 	def search(self):
-		return self.indexer.search(self.query)
+		return self.indexer.search(self.query, source=['title', 'url'])
 
 if __name__ == "__main__":
 	s = Search('basketball')
