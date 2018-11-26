@@ -13,3 +13,9 @@
 ## Running the flask server
 - `export FLASK_APP=app.py`
 - `flask run`
+
+## Running Client
+- Install npm
+- inside client folder
+- `npm install`
+- `npm run serve`
