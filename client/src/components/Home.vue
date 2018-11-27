@@ -16,7 +16,7 @@
           </v-btn>
         </v-flex>
         <v-flex lg1 sm6 md3>
-          <v-btn flat icon color="blue" v-on:click="lucky()">
+          <v-btn color="blue" v-on:click="lucky()">
             I'm Feeling Lucky
           </v-btn>
         </v-flex>
@@ -39,17 +39,12 @@ export default {
       this.$router.push(`/search/${this.query}`)
     },
     lucky: function() {
-      console.log(this.query)
-      
       Query.query({"query": this.query}).then(function(result) {
         var temp = result.data.hits.hits
-
         var dict = [];
-        console.log(temp.length)
         if (temp.length >= 1){
-          //Replace with first hit URL (temp[0.url~])
-          window.open('http://nba.com', '_blank')
-          //window.location.href = "http://nba.com"
+          window.open(temp[0]._source.url, '_blank')
+          //window.location.href = temp[0]._source.url
         }
         else {
           alert("0 Result Found. Unable to redirect to a new URL")

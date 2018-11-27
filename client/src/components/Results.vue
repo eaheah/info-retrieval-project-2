@@ -14,7 +14,7 @@
               </a>
             </div>
             <div class="snip">
-              {{result.snippet}}
+                <span v-html="result.snippet"></span>
             </div>
           </li>
         </ul>
@@ -40,28 +40,29 @@ export default {
   watch: {
     query: function(newQuery, oldQuery) {
       let self = this
-      console.log("Query Changed")
       var q = newQuery
-      console.log(newQuery)
-      console.log(oldQuery)
       Query.query({"query": q}).then(function(result) {
         var temp = result.data.hits.hits
-
+        console.log(temp)
         var dict = [];
         for (var i = 0; i < temp.length; i++) {
           var snippet = "No Highlight"
           if(temp[i].hasOwnProperty('highlight')){
-            var snippet = temp[i].highlight.site_text[0] + "..."
-            snippet = snippet.replace(/<\/?[^>]+(>|$)/g, "");
+            if(temp[i].highlight.hasOwnProperty('description')){
+              snippet = temp[i].highlight.description[0] + "..."
+            }
+            else if (temp[i].highlight.hasOwnProperty('site_text')){
+              snippet = temp[i].highlight.site_text[0] + "..."
+            }
           }
+          snippet = snippet.replace(/<em>/gm, "<strong>").replace(/<\/em>/gm, "</strong>");
+          
           dict.push({
-            title:  "(No Title Yet) Document " + (i+1),
-            url:  "http://nba.com",
+            title:  temp[i]._source.title,
+            url:  temp[i]._source.url,
             snippet:  snippet
           })
         }
-        console.log(self.results)
-        console.log(dict)
         self.results = dict;
       })      
     },
@@ -78,24 +79,29 @@ export default {
   async mounted() {
     var q = this.$store.state.route.params.searchID
     var results = (await Query.query({"query": q})).data.hits.hits 
-    
+    console.log(results)
     var dict = [];
     for (var i = 0; i < results.length; i++) {
       var snippet = "No Highlight"
       if(results[i].hasOwnProperty('highlight')){
-        var snippet = results[i].highlight.site_text[0] + "..."
-        snippet = snippet.replace(/<\/?[^>]+(>|$)/g, "");
+        if(results[i].highlight.hasOwnProperty('description')){
+          snippet = results[i].highlight.description[0] + "..."
+        }
+        else if (results[i].highlight.hasOwnProperty('site_text')){
+          snippet = results[i].highlight.site_text[0] + "..."
+        }
       }
+      snippet = snippet.replace(/<em>/gm, "<strong>").replace(/<\/em>/gm, "</strong>");
+      console.log(snippet)
       dict.push({
-        title:  "(No Title Yet) Document " + (i+1),
-        url:  "http://nba.com",
+        title:  results[i]._source.title,
+        url:  results[i]._source.url,
         snippet:  snippet
       })
     }
     this.results = dict
 
     // eslint-disable-next-line
-    console.log(results)
   }
 };
 </script>
