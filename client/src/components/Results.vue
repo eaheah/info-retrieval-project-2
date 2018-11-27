@@ -36,23 +36,23 @@ export default {
       query: this.$store.state.route.params.searchID
     };
   },
-
-  watch: {
-    query: function(newQuery, oldQuery) {
-      let self = this
-      var q = newQuery
-      Query.query({"query": q}).then(function(result) {
-        var temp = result.data.hits.hits
+  methods: {
+    prepareRender(result) {
+      var temp = result.data.hits.hits
         console.log(temp)
         var dict = [];
-        for (var i = 0; i < temp.length; i++) {
+        var limit = Math.min(10, temp.length)
+        console.log(limit)
+        for (var i = 0; i < limit; i++) {
           var snippet = "No Highlight"
           if(temp[i].hasOwnProperty('highlight')){
             if(temp[i].highlight.hasOwnProperty('description')){
-              snippet = temp[i].highlight.description[0] + "..."
+              snippet = this.bestSnippet(temp[i].highlight.description)
+              //snippet = temp[i].highlight.description[index] + "..."
             }
             else if (temp[i].highlight.hasOwnProperty('site_text')){
-              snippet = temp[i].highlight.site_text[0] + "..."
+              snippet = this.bestSnippet(temp[i].highlight.site_text)
+             //snippet = temp[i].highlight.site_text[index] + "..."
             }
           }
           snippet = snippet.replace(/<em>/gm, "<strong>").replace(/<\/em>/gm, "</strong>");
@@ -63,6 +63,27 @@ export default {
             snippet:  snippet
           })
         }
+        return dict
+    },
+    bestSnippet(snippets){
+      var max = -1;
+      var index = 0;
+      for(var i = 0; i < snippets.length; i++){
+        var count = (snippets[i].match(/<em>/gm) || []).length
+        if( count > max) {
+          max = count
+          index = i
+        }
+      }
+      return snippets[index]
+    }
+  },
+  watch: {
+    query: function(newQuery, oldQuery) {
+      let self = this
+      var q = newQuery
+      Query.query({"query": q}).then(function(result) {
+        var dict = self.prepareRender(result)
         self.results = dict;
       })      
     },
@@ -78,27 +99,8 @@ export default {
 
   async mounted() {
     var q = this.$store.state.route.params.searchID
-    var results = (await Query.query({"query": q})).data.hits.hits 
-    console.log(results)
-    var dict = [];
-    for (var i = 0; i < results.length; i++) {
-      var snippet = "No Highlight"
-      if(results[i].hasOwnProperty('highlight')){
-        if(results[i].highlight.hasOwnProperty('description')){
-          snippet = results[i].highlight.description[0] + "..."
-        }
-        else if (results[i].highlight.hasOwnProperty('site_text')){
-          snippet = results[i].highlight.site_text[0] + "..."
-        }
-      }
-      snippet = snippet.replace(/<em>/gm, "<strong>").replace(/<\/em>/gm, "</strong>");
-      console.log(snippet)
-      dict.push({
-        title:  results[i]._source.title,
-        url:  results[i]._source.url,
-        snippet:  snippet
-      })
-    }
+    var results = (await Query.query({"query": q}))
+    var dict = this.prepareRender(results)
     this.results = dict
 
     // eslint-disable-next-line
