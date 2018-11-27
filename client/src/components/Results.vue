@@ -9,7 +9,7 @@
             </font>
             </div>
             <div>
-              <a v-bind:href="result.url" class="url" target=blank>
+              <a v-bind:href="result.url" class="url" target=blank v-on:click="incrementCount()">
                 {{result.url}}
               </a>
             </div>
@@ -42,7 +42,6 @@ export default {
         console.log(temp)
         var dict = [];
         var limit = Math.min(10, temp.length)
-        console.log(limit)
         for (var i = 0; i < limit; i++) {
           var snippet = "No Highlight"
           if(temp[i].hasOwnProperty('highlight')){
@@ -76,6 +75,16 @@ export default {
         }
       }
       return snippets[index]
+    },
+    incrementCount: function(){
+      let count = localStorage.getItem('clickCount');
+      if (count === null) {
+        count = 0;
+        //console.log("Count is null");
+      }
+      count = Math.floor(count) + 1;
+      localStorage.setItem('clickCount', count);
+      //console.log(localStorage.getItem('clickCount'))  
     }
   },
   watch: {

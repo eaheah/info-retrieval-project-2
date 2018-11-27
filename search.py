@@ -5,11 +5,11 @@ def pp(obj):
 	print(json.dumps(obj, indent=3))
 
 class Search:
-	def __init__(self, text, negative, index="test", doc_type="test", hosts=None):
+	def __init__(self, text, index="test", doc_type="test", hosts=None):
 		self.indexer = Indexer(index=index, doc_type=doc_type, hosts=hosts)
-		self.query = self._make_query(text, negative)
+		self.query = self._make_query(text)
 
-	def _make_query(self, text, negative):
+	def _make_query(self, text):
 		# ['filename', 'url', 'site_text', 'site_html', 'id', 'title', 'description', 'keywords', 'text']
 		return {
 			"highlight": {
@@ -21,41 +21,6 @@ class Search:
 			},
 				"query": {
 					"bool": {
-						"must_not": [
-							{
-								"match_phrase": {
-									"site_text": {
-										"query": negative
-									}
-								}
-							},
-							{
-								"match_phrase": {
-									"title": {
-										"query": negative,
-										"boost": 4
-									}
-								}
-							},
-							{
-								"match_phrase": {
-									"description": {
-										"query": negative,
-										"boost": 3
-									}
-
-								}
-							},
-							{
-								"match_phrase": {
-									"keywords": {
-										"query": negative,
-										"boost": 2
-									}
-
-								}
-							}
-						],
 						"should": [
 							{
 								"match_phrase": {
@@ -116,4 +81,3 @@ if __name__ == "__main__":
 	s = Search('national basketball association')
 
 	pp(s.search())
-

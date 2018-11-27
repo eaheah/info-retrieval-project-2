@@ -13,19 +13,5 @@ CORS(app, support_credentials=True)
 @cross_origin(supports_credentials=True)
 def search():
     req_data = request.get_json()
-    query = req_data['query']
-    if query is None:
-        query = ""
-    query = query.lower()
-    print (query)
-
-    exception = ""
-    regex = re.compile(r'not\((.*?)\)')
-    if regex.search(query):
-        exception = re.search(r'not\((.*?)\)',query).group(1)
-    print(exception)
-
-    phrase = re.sub(r'not\([^)]*\)', '', query)
-    print(phrase)
-    s = Search(phrase,exception).search()
+    s = Search(req_data['query']).search()
     return jsonify(s)

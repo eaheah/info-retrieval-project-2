@@ -22,6 +22,20 @@
         </v-flex>
       </v-layout>
     </v-container>
+    <v-container>
+      <v-layout row justify-center>
+        <v-flex lg1 sm6 md3>
+          <v-btn color="green" v-on:click="start()">
+            Start
+          </v-btn>
+        </v-flex>
+        <v-flex lg1 sm6 md3>
+          <v-btn color="red" v-on:click="done()">
+            Done
+          </v-btn>
+        </v-flex>
+      </v-layout>
+    </v-container>
   </v-form>
 </template>
 
@@ -36,9 +50,13 @@ export default {
   },
   methods: {
     search: function() {
+      this.incrementCount()
+      this.addQuery(this.query)
       this.$router.push(`/search/${this.query}`)
     },
     lucky: function() {
+      this.incrementCount()
+      this.addQuery(this.query)
       Query.query({"query": this.query}).then(function(result) {
         var temp = result.data.hits.hits
         var dict = [];
@@ -50,6 +68,49 @@ export default {
           alert("0 Result Found. Unable to redirect to a new URL")
         }
       })
+    },
+    start: function(){
+      localStorage.setItem('clickCount', 0);
+      localStorage.setItem('queries', []);
+      let starttime = new Date().getTime();
+	    localStorage.setItem("starttime", starttime);
+      console.log("Restarted")
+      console.log("Time is " + localStorage.getItem("starttime"));
+      console.log("Number of Click Count: " + localStorage.getItem('clickCount')) 
+      console.log("Queries: " + localStorage.getItem('queries'))  
+    },
+    done: function(){
+      var endtime = new Date().getTime();
+	    var starttime = localStorage.getItem("starttime");
+	    var elapsedTime = 0;
+	    if (starttime !== null) {
+		    elapsedTime = (endtime - starttime) / 1000.0;
+		    console.log("Elapsed time: " + elapsedTime + " seconds");
+	    }
+      console.log("Number of Click Count: " + localStorage.getItem('clickCount')) 
+      console.log("Queries: " + localStorage.getItem('queries'))  
+    },
+    incrementCount: function(){
+      let count = localStorage.getItem('clickCount');
+	    if (count === null) {
+		    count = 0;
+		    //console.log("Count is null");
+	    }
+	    count = Math.floor(count) + 1;
+	    localStorage.setItem('clickCount', count);
+      //console.log(localStorage.getItem('clickCount'))  
+    },
+    addQuery(query){
+      let queries = localStorage.getItem('queries');
+	    if (queries === null || queries == []) {
+		    queries = "'"+ query + "', ";
+		    //console.log("Query was empty");
+	    }
+      else {
+	      queries = queries.concat("'" + query + "', ");
+      }
+	    localStorage.setItem('queries', queries);
+      //console.log(localStorage.getItem('queries').toString());
     }
   }
 }
