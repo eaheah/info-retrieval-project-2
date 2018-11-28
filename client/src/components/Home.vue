@@ -51,15 +51,14 @@ export default {
   methods: {
     search: function() {
       this.incrementCount()
-      this.addQuery(this.query)
+      this.addQuery(this.query, "")
       this.$router.push(`/search/${this.query}`)
     },
     lucky: function() {
       this.incrementCount()
-      this.addQuery(this.query)
+      this.addQuery(this.query, "(L)")
       Query.query({"query": this.query}).then(function(result) {
         var temp = result.data.hits.hits
-        var dict = [];
         if (temp.length >= 1){
           window.open(temp[0]._source.url, '_blank')
           //window.location.href = temp[0]._source.url
@@ -72,44 +71,60 @@ export default {
     start: function(){
       localStorage.setItem('clickCount', 0);
       localStorage.setItem('queries', []);
+      localStorage.setItem('queriesCount', 0);
+      localStorage.setItem('luckyCount', 0)
       let starttime = new Date().getTime();
-	    localStorage.setItem("starttime", starttime);
+      localStorage.setItem("starttime", starttime);
       console.log("Restarted")
       console.log("Time is " + localStorage.getItem("starttime"));
       console.log("Number of Click Count: " + localStorage.getItem('clickCount')) 
-      console.log("Queries: " + localStorage.getItem('queries'))  
+      console.log("Queries: " + localStorage.getItem('queries'))
+      console.log("Number of Queries (Normal + Lucky) Count: " + localStorage.getItem('queriesCount')) 
+      console.log("Number of Lucky Count: " + localStorage.getItem('luckyCount'))  
     },
     done: function(){
       var endtime = new Date().getTime();
-	    var starttime = localStorage.getItem("starttime");
-	    var elapsedTime = 0;
-	    if (starttime !== null) {
-		    elapsedTime = (endtime - starttime) / 1000.0;
-		    console.log("Elapsed time: " + elapsedTime + " seconds");
-	    }
+      var starttime = localStorage.getItem("starttime");
+      var elapsedTime = 0;
+      if (starttime !== null) {
+        elapsedTime = (endtime - starttime) / 1000.0;
+        console.log("Elapsed time: " + elapsedTime + " seconds");
+      }
       console.log("Number of Click Count: " + localStorage.getItem('clickCount')) 
       console.log("Queries: " + localStorage.getItem('queries'))  
+      console.log("Number of Queries (Normal + Lucky) Count: " + localStorage.getItem('queriesCount')) 
+      console.log("Number of Lucky Count: " + localStorage.getItem('luckyCount')) 
     },
     incrementCount: function(){
       let count = localStorage.getItem('clickCount');
-	    if (count === null) {
-		    count = 0;
-		    //console.log("Count is null");
-	    }
-	    count = Math.floor(count) + 1;
-	    localStorage.setItem('clickCount', count);
-      //console.log(localStorage.getItem('clickCount'))  
-    },
-    addQuery(query){
-      let queries = localStorage.getItem('queries');
-	    if (queries === null || queries == []) {
-		    queries = "'"+ query + "', ";
-		    //console.log("Query was empty");
-	    }
-      else {
-	      queries = queries.concat("'" + query + "', ");
+      if (count === null) {
+        count = 0;
+        //console.log("Count is null");
       }
-	    localStorage.setItem('queries', queries);
+      count = Math.floor(count) + 1;
+      localStorage.setItem('clickCount', count);
+      //console.log(localStorage.getItem('clickCount'))  
+      },
+    addQuery(query,mode){
+      let queries = localStorage.getItem('queries');
+      let queriesCount = localStorage.getItem('queriesCount');
+      let luckyCount = localStorage.getItem('luckyCount');
+      if (queries === null || queries == []) {
+        queries = "'"+ query + mode + "', ";
+        queriesCount = 0;
+        luckyCount = 0;
+        //console.log("Query was empty");
+      }
+      else {
+        queries = queries.concat("'" + query + mode + "', ");
+      }
+      queriesCount = Math.floor(queriesCount) + 1;
+      if (mode === "(L)") {
+        luckyCount = Math.floor(luckyCount) + 1;
+        localStorage.setItem('luckyCount', luckyCount)
+      }
+      localStorage.setItem('queries', queries);
+      localStorage.setItem('queriesCount', queriesCount)
       //console.log(localStorage.getItem('queries').toString());
     }
   }
