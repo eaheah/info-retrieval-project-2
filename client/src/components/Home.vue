@@ -25,11 +25,6 @@
     <v-container>
       <v-layout row justify-center>
         <v-flex lg1 sm6 md3>
-          <v-btn color="green" v-on:click="start()">
-            Start
-          </v-btn>
-        </v-flex>
-        <v-flex lg1 sm6 md3>
           <v-btn color="red" v-on:click="done()">
             Done
           </v-btn>
@@ -47,6 +42,9 @@ export default {
     return {
       query: null,
     }
+  },
+  mounted() {
+    this.start();
   },
   methods: {
     search: function() {

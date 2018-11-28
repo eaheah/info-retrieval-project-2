@@ -1,6 +1,6 @@
 from elastic_indexer import Indexer
 import json
-
+import re
 def pp(obj):
 	print(json.dumps(obj, indent=3))
 
@@ -11,6 +11,9 @@ class Search:
 
 	def _make_query(self, text):
 		# ['filename', 'url', 'site_text', 'site_html', 'id', 'title', 'description', 'keywords', 'text']
+		text2 = re.sub("\s+", " ", text)
+		text2 = text2.strip().replace(" ", " OR " )
+		
 		return {
 			"highlight": {
 				"fields": {
@@ -20,44 +23,48 @@ class Search:
 				}
 			},
 				"query": {
-					"bool": {
-						"should": [
-							{
-								"match_phrase": {
-									"site_text": {
-										"query": text
-									}
-								}
-							},
-							{
-								"match_phrase": {
-									"title": {
-										"query": text,
-										"boost": 4
-									}
-								}
-							},
-							{
-								"match_phrase": {
-									"description": {
-										"query": text,
-										"boost": 3
-									}
-
-								}
-							},
-							{
-								"match_phrase": {
-									"keywords": {
-										"query": text,
-										"boost": 2
-									}
-
-								}
-							}
-						]
+					"query_string": {
+						"fields" : ["keywords^2", "site_text", "description^3", "title^4"],
+						"query" : text2
 					}
 				}
+				#"query": {
+				#	"bool": {
+				#		"should": [
+				#			{
+				#				"match_phrase": {
+				#					"site_text": {
+				#						"query": text
+				#					}
+				#				}
+				#			},
+				#			{
+				#				"match_phrase": {
+				#					"title": {
+				#						"query": text,
+				#						"boost": 4
+				#					}
+				#				}
+				#			},
+				#			{
+				#				"match_phrase": {
+				#					"description": {
+				#						"query": text,
+				#						"boost": 3
+				#					}
+				#				}
+				#			},
+				#			{
+				#				"match_phrase": {
+				#					"keywords": {
+				#						"query": text,
+				#						"boost": 2
+				#					}
+				#				}
+				#			}
+				#		]
+				#	}
+				#}
 			}
 
 
