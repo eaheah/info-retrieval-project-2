@@ -1,14 +1,28 @@
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from elasticsearch.client import IndicesClient
-
+from os import environ
 
 class Indexer:
-    def __init__(self, index, doc_type, hosts=None):
-        if hosts is None:
-            hosts = ['localhost']
+    def __init__(self, index, doc_type, hosts="not none"):
+        print("IN Indexer")
+        print(environ.get('ES_PASSWORD'))
+        # if hosts is None:
+        #     hosts = ['localhost']
 
-        self.es = Elasticsearch(hosts=hosts, verify_certs=False, timeout=60)
+        #     self.es = Elasticsearch(hosts=hosts, verify_certs=False, timeout=60)
+        # else:
+
+        self.es = Elasticsearch(
+            ["https://d8ff23d00d4c44beb4776752abefbed8.us-west-1.aws.found.io:9243"],
+            http_auth=("elastic", environ.get('ES_PASSWORD')),
+            use_ssl=True,
+            port=9243,
+            verify_certs=False,
+        )
+
+        print(self.es.ping)
+
         self.ic = IndicesClient(self.es)
         self.index = index
         self.doc_type = doc_type

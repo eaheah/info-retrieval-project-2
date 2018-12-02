@@ -7,3 +7,4 @@ lorem==0.1.1
 html2text==2018.1.9
 newspaper3k==0.2.8
 flask==1.0.2
+flask-cors==3.0.7

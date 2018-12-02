@@ -21,27 +21,28 @@ class Search:
 			},
 				"query": {
 					"bool": {
-						"must_not": [
+						"should": [
 							{
 								"match_phrase": {
 									"site_text": {
-										"query": negative
+										"query": text,
+										"boost": 2
 									}
 								}
 							},
 							{
 								"match_phrase": {
 									"title": {
-										"query": negative,
-										"boost": 4
+										"query": text,
+										"boost": 5
 									}
 								}
 							},
 							{
 								"match_phrase": {
 									"description": {
-										"query": negative,
-										"boost": 3
+										"query": text,
+										"boost": 4
 									}
 
 								}
@@ -49,43 +50,38 @@ class Search:
 							{
 								"match_phrase": {
 									"keywords": {
-										"query": negative,
-										"boost": 2
+										"query": text,
+										"boost": 3
 									}
 
 								}
-							}
-						],
-						"should": [
+							},
 							{
-								"match_phrase": {
+								"match": {
 									"site_text": {
 										"query": text
 									}
 								}
 							},
 							{
-								"match_phrase": {
+								"match": {
 									"title": {
 										"query": text,
-										"boost": 4
 									}
 								}
 							},
 							{
-								"match_phrase": {
+								"match": {
 									"description": {
 										"query": text,
-										"boost": 3
 									}
 
 								}
 							},
 							{
-								"match_phrase": {
+								"match": {
 									"keywords": {
 										"query": text,
-										"boost": 2
 									}
 
 								}

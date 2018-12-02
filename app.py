@@ -27,5 +27,5 @@ def search():
 
     phrase = re.sub(r'not\([^)]*\)', '', query)
     print(phrase)
-    s = Search(phrase,exception).search()
+    s = Search(phrase,exception, index='final-hopeful').search()
     return jsonify(s)

@@ -95,17 +95,20 @@ class ContentProcessor:
     def process_file(self, filename, fname):
         with open(filename, 'r') as f:
             # f = open(filename) # file never gets closed otherwise
-            soup = BeautifulSoup(f, 'html.parser')
-            new_content = self.clean_html(soup)
+            try:
+                soup = BeautifulSoup(f, 'html.parser')
+                new_content = self.clean_html(soup)
 
-            with open (os.path.join('html_processed', fname), 'w') as f2:
-                f2.write(str(new_content))
+                with open (os.path.join('html_processed', fname), 'w') as f2:
+                    f2.write(str(new_content))
 
-            clean_content = ''
-            for string_soup in new_content.stripped_strings:
-                clean_content += string_soup + " "
-            with open (os.path.join('processed', fname), 'w') as f3:
-                f3.write(clean_content)
+                clean_content = ''
+                for string_soup in new_content.stripped_strings:
+                    clean_content += string_soup + " "
+                with open (os.path.join('processed', fname), 'w') as f3:
+                    f3.write(clean_content)
+            except UnicodeDecodeError:
+                pass
 
     def clean_html(self, soup):
 

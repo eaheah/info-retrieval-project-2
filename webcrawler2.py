@@ -14,7 +14,7 @@ from multiprocessing.pool import ThreadPool
 import threading
 import pickle
 import json
-
+from reppy.robots import Robots
 def pp(obj):
     print(json.dumps(obj, indent=2))
 
@@ -30,81 +30,79 @@ class WebCrawler:
         with kwargs
     Params: seed, num_pages, domain
     '''
-    def __init__(self, csv_path=None, threaded=False, **kwargs):
+    def __init__(self, num_pages=10, threaded=False, process_robot=False):
         self.threaded = threaded
-        if csv_path:
-            seed, num_pages, domain = self.get_csv_input(csv_path)
-        else:
-            seed, num_pages, domain = self.get_kwarg_input(kwargs)
-        num_pages = self.validate_input(seed, num_pages, domain)
+        self.num_pages = num_pages
+        self.seed = 'http://www.nba.com/'
+        self.domain = 'www.nba.com'
+        self.crawl_delay = 0.5
+        self.robots_url = f'{self.seed}/robots.txt'
 
-        self.seed, self.num_pages, self.domain = seed, num_pages, domain
+        num_pages = self.validate_input(num_pages)
+
+
         self.repo_files = {}
         self.file_count = 0
         self.main_link_queue = set()
         self.domain_dict = {}
         self.visited_robots = set()
 
+
+        self._process_robot(process_robot)
+
+
         self.initialize_repo()
         self.initialize_seed()
         self.process_main_link_queue()
 
-    def get_csv_input(self, csv_path):
-        '''
-        Gets input from csv file
-        Checks that input is correct length
-        '''
-        st = time.time()
-        with open(csv_path, newline='') as csvfile:
-            reader = csv.reader(csvfile, delimiter=',')
+    def process_sitemap(self, sitemap):
+        urls = []
+        sr = requests.get(sitemap)
+        # time.sleep(1)
+        sr.encoding = 'utf-8'
+        soup = BeautifulSoup(sr.text)
+        sitemapTags = soup.find_all("sitemap")
+        if sitemapTags:
+            for sitemap in sitemapTags:
+                self.sitemaps.append(sitemap.findNext('loc').text)
+        else:
+            _urls = soup.find_all('url')
+            for url in _urls:
+                self.main_link_queue.add(url.findNext('loc').text)
+        time.sleep(self.crawl_delay)
 
-            file_input = tuple(next(reader))
-            if not 2 <= len(file_input) <= 3:
-                raise CSVInputError("CSV input must be length 2 or 3")
+    def pickle_initial_main_link_queue(self):
+        with open('pickled_main_link_queue.pkl', 'wb') as f:
+            pickle.dump(self.main_link_queue, f)
 
-            if len(file_input) == 2:
-                seed, num_pages = file_input
-                domain = None
-            elif len(file_input) == 3:
-                seed, num_pages, domain = file_input
-            e = time.time() - st
-            # print(f'get_csv_input took {e}')
-            return seed, num_pages, domain
+    def unpickle_initial_main_link_queue(self):
+        with open('pickled_main_link_queue.pkl', 'rb') as f:
+            self.main_link_queue |= pickle.load(f)
 
-    def get_kwarg_input(self, kwargs):
-        '''
-        Gets input from kwargs
-        Checks for all applicable inputs
-        '''
-        st = time.time()
-        for kw in ['seed', 'num_pages', 'domain']:
-            if kw not in kwargs:
-                raise(InputError('kwargs must include seed, num_pages, and domain'))
-        e = time.time() - st
-        # print(f'get_kwarg_input took {e}')
-        return kwargs['seed'], kwargs['num_pages'], kwargs['domain']
+    def _process_robot(self, process_robot):
+        r = Robots.fetch(self.robots_url)
+        self.agent = r.agent('*')
+        if process_robot:
+            self.sitemaps = list(r.sitemaps)
+            self.sitemap_urls = []
+            while(self.sitemaps):
+                s = self.sitemaps.pop(0)
+                self.process_sitemap(s)
+            self.pickle_initial_main_link_queue()
+        else:
+            self.unpickle_initial_main_link_queue()
 
-    def validate_input(self, seed, num_pages, domain):
+
+    def validate_input(self, num_pages):
         '''
-        Validates that seed and domain are strings,
+        Validates
             that num_pages is int (and coerces it),
-            that seed is a valid url
         '''
-        st = time.time()
-        if not isinstance(seed, str):
-            raise InputError('seed input must be a string')
-        if not isinstance(domain, str):
-            raise InputError('domain input must be a string')
         try:
             num_pages = int(num_pages)
         except ValueError as e:
             raise InputError('num_pages input is invalid. Must be coercible to int')
 
-        seed_parse = urlparse(seed)
-        if not (seed_parse.scheme and seed_parse.netloc):
-            raise InputError("Seed input is invalid url")
-        e = time.time() - st
-        # print(f'validate_input took {e}')
         return num_pages
 
     def initialize_repo(self):
@@ -137,12 +135,12 @@ class WebCrawler:
         Finds links from file and adds them to main_link_queue
         '''
         st = time.time()
-        crawl_delay = self.check_for_robot(url)
+        # crawl_delay = self.check_for_robot(url)
         parsed_url = urlparse(url)
         add_to_repo = self.check_domain(parsed_url.netloc)
         # print(add_to_repo)
-        if add_to_repo:
-            time.sleep(crawl_delay)
+        if add_to_repo and self.agent.allowed(url):
+            time.sleep(self.crawl_delay)
             added = self.add_file_to_repo(url)
             # print(added)
             if added:
@@ -199,93 +197,6 @@ class WebCrawler:
             self.process_main_link_queue()
         e = time.time() - st
         # print(f'process_main_link_queue took {e}')
-
-    def check_for_robot(self, url):
-        '''
-        Checks if the robot has been visited for the url
-        If not, gets the robot.txt file for the url's domain
-            Finds disallowed urls
-            Finds sitemap, if any
-            Removes disallowed urls from sitemap urls
-            Finds crawl delay, if any and sets it
-        TODO: case where site does not have robots.txt
-        TODO: save crawl_delay for visited robots
-        TODO: follow sub sitemaps to valid urls (case: reddit)
-        '''
-        print("in check for robot")
-        st = time.time()
-        parsed_url = urlparse(url)
-        base_url = f'{parsed_url.scheme}://{parsed_url.netloc}'
-        crawl_delay = .5
-        if base_url not in self.visited_robots:
-            print("processing robot")
-            robots = f'{base_url}/robots.txt'
-            rst = time.time()
-            r = requests.get(robots)
-
-            e = time.time() - rst
-            # print(f'request (in check for robot) took {e}')
-            tmp = {}
-            text = [line.decode('utf-8') for line in r.iter_lines()]
-            pp(text)
-            for i,line in enumerate(text):
-
-                if 'user-agent' in line.lower():
-                    tmp[line.lower()] = i
-                elif 'Sitemap' in line:
-                    tmp[line] = i
-                # print(line)
-
-            # print(tmp)
-
-            try:
-                user_line = tmp['user-agent: *']
-                others = sorted(list(set(tmp.values()) - set([user_line])))
-                end_user = others[0] if others else None
-
-                user_agent = {'Disallow': [], 'Crawl-delay': None}
-                for i,line in enumerate(text):
-                    if i < user_line:
-                        pass
-                    elif i > end_user:
-                        pass
-                    elif 'Disallow' in line:
-                        ext = line.split(' ')[1]
-                        user_agent['Disallow'].append(f'{base_url}{ext}')
-                    elif 'Crawl-delay' in line:
-                        user_agent['Crawl-delay'] = int(line.split(' ')[1])
-
-                # sitemaps = [key.split(' ')[1] for key in tmp.keys() if 'Sitemap' in key]
-                # sitemap_urls = []
-                # sst = time.time()
-                # for sitemap in sitemaps:
-                #     sr = requests.get(sitemap)
-                #     time.sleep(1)
-                #     sr.encoding = 'utf-8'
-                #     soup = BeautifulSoup(sr.text, 'html5lib')
-                #     locs = soup.find_all("loc")
-                #     sitemap_urls += [t.text for t in locs]
-                # e = time.time() - sst
-                # print(f'sitemaps took {e}')
-
-                # sitemap_urls = set(sitemap_urls)
-
-                # for disallowed in user_agent['Disallow']:
-                #     filtered = fnmatch.filter(sitemap_urls, disallowed)
-                #     sitemap_urls = sitemap_urls - set(filtered)
-
-                # self.main_link_queue |= sitemap_urls
-
-                self.visited_robots.add(base_url)
-
-                if user_agent['Crawl-delay']:
-                    crawl_delay = user_agent['Crawl-delay']
-
-                time.sleep(.5)
-            except:
-                pass
-
-        return crawl_delay
 
     def check_domain(self, domain):
         '''
@@ -378,38 +289,39 @@ class WebCrawler:
         return True
 
     def display(self):
+        print(len(self.main_link_queue))
         '''
         For jupyter notebook, displays a table of all files in repo
         '''
-        st = time.time()
-        html = '<table><tr><td>Live URL</td><td>File</td><td>Status</td><td># Links</td><td># Images</td></tr>'
-        for key in self.repo_files:
-            skey = key.rstrip('/')
-            status = self.repo_files[key]['status']
-            filename = self.repo_files[key]['filename']
-            filename = f'repository/{filename}'
-            links = self.repo_files[key]['links']
-            images = self.repo_files[key]['images']
-            html += f'<tr><td><a href={skey}>{skey}<td><a href={filename}>{key}</a></td><td>{status}</td><td>{links}</td><td>{images}</td></tr>'
-        html += '</table>'
-        display(HTML(html))
-        e = time.time() - st
-        # print(f'display took {e}')
+        # st = time.time()
+        # html = '<table><tr><td>Live URL</td><td>File</td><td>Status</td><td># Links</td><td># Images</td></tr>'
+        # for key in self.repo_files:
+        #     skey = key.rstrip('/')
+        #     status = self.repo_files[key]['status']
+        #     filename = self.repo_files[key]['filename']
+        #     filename = f'repository/{filename}'
+        #     links = self.repo_files[key]['links']
+        #     images = self.repo_files[key]['images']
+        #     html += f'<tr><td><a href={skey}>{skey}<td><a href={filename}>{key}</a></td><td>{status}</td><td>{links}</td><td>{images}</td></tr>'
+        # html += '</table>'
+        # display(HTML(html))
+        # e = time.time() - st
+        # # print(f'display took {e}')
 
     def output(self):
 
-        html = '<html><body><table><tr><td>Live URL</td><td>File</td><td>Status</td><td># Links</td><td># Images</td></tr>'
-        for key in self.repo_files:
-            skey = key.rstrip('/')
-            status = self.repo_files[key]['status']
-            filename = self.repo_files[key]['filename']
-            filename = f'repository/{filename}'
-            links = self.repo_files[key]['links']
-            images = self.repo_files[key]['images']
-            html += f'<tr><td><a href={skey}>{skey}<td><a href={filename}>{key}</a></td><td>{status}</td><td>{links}</td><td>{images}</td></tr>'
-        html += '</table></body></html>'
-        with open('report.html', 'w') as f:
-            f.write(html)
+        # html = '<html><body><table><tr><td>Live URL</td><td>File</td><td>Status</td><td># Links</td><td># Images</td></tr>'
+        # for key in self.repo_files:
+        #     skey = key.rstrip('/')
+        #     status = self.repo_files[key]['status']
+        #     filename = self.repo_files[key]['filename']
+        #     filename = f'repository/{filename}'
+        #     links = self.repo_files[key]['links']
+        #     images = self.repo_files[key]['images']
+        #     html += f'<tr><td><a href={skey}>{skey}<td><a href={filename}>{key}</a></td><td>{status}</td><td>{links}</td><td>{images}</td></tr>'
+        # html += '</table></body></html>'
+        # with open('report.html', 'w') as f:
+        #     f.write(html)
 
         with open('repo_files.pkl', 'wb') as f:
             pickle.dump(self.repo_files, f)

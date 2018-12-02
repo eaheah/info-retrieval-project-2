@@ -42,6 +42,7 @@ class Index:
             self.repo_files = pickle.load(f)
 
         self.reversed_repo_files = self._reverse_repo_files()
+        # print(self.reversed_repo_files)
         self.html_folder = html_folder
         self.text_folder = text_folder
         self.page_size = page_size
@@ -75,7 +76,6 @@ class Index:
             }
             cp = ContentProcessor(html)
             doc.update(**cp.extract_fields())
-            print(doc.keys())
             data.append(doc)
 
         self.indexer.bulk_index_data(data, self.page_size)
@@ -114,6 +114,6 @@ class Index:
 
 
 if __name__ == '__main__':
-    i = Index(page_size=4, recreate=False)
+    i = Index(page_size=4, index='test4', recreate=False)
     i.index()
 
